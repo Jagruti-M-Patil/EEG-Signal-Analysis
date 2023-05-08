@@ -6,8 +6,8 @@ import mne
 import random
 import string
 
-root = '/media/souritra/SeaGate Expansion Drive/Jagruti/physionet.org/files/chbmit/1.0.0' # pointer to where all data is stored
-saveroot = './data' # pointer to where you wish to store train / test data
+root = 'E:/Semester 2/IN 791/physionet.org/files/chbmit/1.0.0' # pointer to where all data is stored
+saveroot = 'data/' # pointer to where you wish to store train / test data
 savefmt = '.npy' # save files in numpy's native format for arrays
 
 print('Reading database:', root)
@@ -19,9 +19,8 @@ def get_cropped_data(filepath, start, end) -> np.ndarray:
                  .get_data(picks='all', units='uV', return_times=False)
     return data
 
-df = pd.read_excel('/home/souritra/Documents/IN791/chbmit-seizure-prediction/evaluation/train_test_data_copy_3.xlsx')
-print(df)
-exit()
+df = pd.read_excel('E:\\Semester 2\\IN 791\\physionet.org\\Codes\\train_test_data.xlsx')
+
 # core data generation loop
 with tqdm(total=len(df)) as pbar:
     identifier = ['A', 'B', 'C'] # generate filename for Train -> chb06 -> preictal

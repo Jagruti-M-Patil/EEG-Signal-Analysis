@@ -45,6 +45,11 @@ def readField(line:str, field_name:str, line_no:int, last_line:str) -> str :
 	else :
 		
 		return words[1].strip()
+	
+def get_sec(time_str):
+    """Get seconds from time."""
+    h, m, s = time_str.split(':')
+    return int(h) * 3600 + int(m) * 60 + int(s)
 
 def readSummaryFile(summary_file_name_path:str, patient_id:str) :
 
@@ -105,7 +110,7 @@ def readSummaryFile(summary_file_name_path:str, patient_id:str) :
 			label_dict['Class'].append('Interictal')
 			label_dict['Seizure Start'].append(0)
 			label_dict['Crop Start'].append(0)
-			label_dict['Crop End'].append(preictal_period)
+			label_dict['Crop End'].append(min(preictal_period, get_sec(end_time) - get_sec(start_time)) - 1)
 
 		# print(edf_file_name, start_time, end_time, num_seizures)
 
