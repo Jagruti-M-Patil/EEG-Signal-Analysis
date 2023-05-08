@@ -1,4 +1,4 @@
-# Created by Souritra Garai, 2023
+# Created by Souritra Garai & Jagruti Patil, 2023
 # This script sorts edf files into preictal / interictal class
 # and Test / Train set after reading the 'chbXX-summary.txt' file
 # Check the '__main__' part
@@ -173,7 +173,7 @@ def readSummaryFile(summary_file_name_path:str, patient_id:str) :
 if __name__ == '__main__' :
 
 	# Path to the EEG Data in edf format
-	eeg_data_path = '/media/souritra/SeaGate Expansion Drive/Jagruti/physionet.org/files/chbmit/1.0.0/'
+	eeg_data_path = 'E:/Semester 2/IN 791/physionet.org/files/chbmit/1.0.0/'
 
 	patient_ids = ['chb01', 'chb02', 'chb03']
 
