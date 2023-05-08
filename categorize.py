@@ -51,31 +51,29 @@ def readCheckChannels(file) :
 	except ValueNotFoundError	: pass
 
 	line = file.readline()	# This line would contain "*****************"
-	line = file.readline()
-
 	channel_no = 0
 
 	master_channel_list = list(EEG_Channels).reverse()
+	master_channel = master_channel_list.pop()
 
-	dummy_channels = []
+	reqd_channel_indices = []
 
-	while channels :
+	while master_channel_list :
 
 		try :
 
 			channel_no += 1
+			line = file.readline()
 			channel_name = readField(line, "Channel %d".format(channel_no))
 
-			if channel_name == '-' :
-				
-				dummy_channels.append(channel_no)
-				continue
+			if channel_name == master_channel :
 
-			if channel_name != master_channel_list.pop() :
+				reqd_channel_indices.append(channel_no)
+				master_channel = master_channel_list.pop()
 
-				return False
+		except FieldNotFoundError :
 
-
+			break
 
 
 
