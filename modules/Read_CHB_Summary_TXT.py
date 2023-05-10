@@ -5,6 +5,7 @@ columns = [
 	't_start',  # Global time in seconds
 	't_end',    # Global time in seconds
 	'class',	# Ictal, Preictal, Interictal
+	'f_start_t'	# Global time in seconds
 ]
 
 def getSeconds(time_str:str, days:int=0) -> int :
@@ -147,6 +148,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 			file_summary['class'].append('Interictal')
 			file_summary['t_start'].append(start_time)
 			file_summary['t_end'].append(end_time)
+			file_summary['f_start_t'].append(start_time)
 
 			appendChannels(file_summary, reqd_channels_indices)
 
@@ -174,6 +176,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 				file_summary['class'].append('Interictal')
 				file_summary['t_start'].append(start_time)
 				file_summary['t_end'].append(preictal_start_time)
+				file_summary['f_start_t'].append(start_time)
 
 				appendChannels(file_summary, reqd_channels_indices)
 
@@ -181,6 +184,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 				file_summary['class'].append('Preictal')
 				file_summary['t_start'].append(preictal_start_time)
 				file_summary['t_end'].append(preictal_end_time)
+				file_summary['f_start_t'].append(start_time)
 
 				appendChannels(file_summary, reqd_channels_indices)
 
@@ -197,6 +201,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 						file_summary['class'].append('Preictal')
 						file_summary['t_start'].append(preictal_start_time)
 						file_summary['t_end'].append(prev_file_end_time)
+						file_summary['f_start_t'].append(file_summary['f_start_t'][-1])
 
 						for field in range(len(Parameters.EEG_Channels)) : file_summary[field].append(file_summary[field][-1])
 
@@ -206,6 +211,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 				file_summary['class'].append('Preictal')
 				file_summary['t_start'].append(start_time)
 				file_summary['t_end'].append(preictal_end_time)
+				file_summary['f_start_t'].append(start_time)
 
 				appendChannels(file_summary, reqd_channels_indices)
 
@@ -214,6 +220,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 			file_summary['class'].append('Ictal')
 			file_summary['t_start'].append(start_time + seizures_start_time)
 			file_summary['t_end'].append(start_time + seizures_end_time)
+			file_summary['f_start_t'].append(start_time)
 
 			appendChannels(file_summary, reqd_channels_indices)
 

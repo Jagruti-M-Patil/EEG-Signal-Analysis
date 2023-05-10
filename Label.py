@@ -6,22 +6,22 @@ from modules.Read_CHB_Summary_TXT import readCaseSummaryTxt
 
 df = pd.DataFrame()
 
-for case in Parameters.cases :
+for case_id in Parameters.cases :
     
-	summary_file_path = os.path.join(Parameters.EEG_dataset_path, case, case + '-summary.txt')
+	summary_file_path = os.path.join(Parameters.EEG_dataset_path, case_id, case_id + '-summary.txt')
 
 	try :
 
 		summary_dict = readCaseSummaryTxt(summary_file_path)
 
-		summary_dict['case'] = [case] * len(summary_dict['f_name'])
+		summary_dict['case'] = [case_id] * len(summary_dict['f_name'])
 
 		temp_df = pd.DataFrame(summary_dict)
 		df = pd.concat([df, temp_df])
 
 	except EOFError :
 
-		print('Case \"' + case + '\" does not contain channels according to the channel list in Parameters.py')
+		print('Case \"' + case_id + '\" does not contain channels according to the channel list in Parameters.py')
 		
 # print(df)
 
