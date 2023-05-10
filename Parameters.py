@@ -1,13 +1,32 @@
-path = "D:\\Jagruti's Docs\\IN719\\CHB-MIT-EEG-Data"
+EEG_dataset_path = "D:\\Jagruti's Docs\\IN719\\CHB-MIT-EEG-Data"
+
+save_path = "D:\\Jagruti's Docs\\IN719\\data"
 
 preictal_period = 15 * 60 # seconds
 
 cases = [
-    "chb12"
-	# "chb02",
-	# "chb03",
-	# "chb04",
-	# "chb05"
+    "chb01",
+	"chb02",
+	"chb03",
+	"chb04",
+	"chb05",
+    "chb06",
+	"chb07",
+	"chb08",
+	"chb09",
+	"chb10",
+    "chb11",
+	"chb12",
+	"chb13",
+	"chb14",
+	"chb15",
+    "chb16",
+	"chb17",
+	"chb18",
+	"chb19",
+	"chb20",
+    "chb21",
+    "chb22"
 ]
 
 EEG_Channels = (

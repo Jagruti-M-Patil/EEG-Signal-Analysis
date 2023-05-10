@@ -1,4 +1,4 @@
-import dataset
+import Parameters
 
 columns = [
 	'f_name',
@@ -44,7 +44,7 @@ def readChannels(file) -> list :
 	indices_list = []
 
 	channel_no = 0
-	reqd_channel_list = list(dataset.EEG_Channels)
+	reqd_channel_list = list(Parameters.EEG_Channels)
 	reqd_channel = reqd_channel_list.pop(0)
 
 	while True :
@@ -70,7 +70,7 @@ def readChannels(file) -> list :
 
 def appendChannels(file_summary_dict:dict, reqd_channels_indices:list) :
 
-	for EEG_channel_no, channel_number in zip(range(len(dataset.EEG_Channels)), reqd_channels_indices) :
+	for EEG_channel_no, channel_number in enumerate(reqd_channels_indices) :
 
 			file_summary_dict[EEG_channel_no].append(channel_number)
 
@@ -82,7 +82,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 
 	file_summary = dict()
 	for field in columns : file_summary[field] = []
-	for field in range(len(dataset.EEG_Channels)) : file_summary[field] = []
+	for field in range(len(Parameters.EEG_Channels)) : file_summary[field] = []
 	
 	reqd_channels_indices = readChannels(file)
 	
@@ -103,11 +103,17 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 
 		except ValueNotFoundError :
 
-			reqd_channels_indices = readChannels(file)
-	
-			while len(reqd_channels_indices) != 23 :
-			
+			try :
+
 				reqd_channels_indices = readChannels(file)
+		
+				while len(reqd_channels_indices) != 23 :
+				
+					reqd_channels_indices = readChannels(file)
+
+			except EOFError :
+
+				break
 
 		except FieldNotFoundError :
 
@@ -159,11 +165,18 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 			except FieldNotFoundError :	seizures_end_time = int(readField(line, 'Seizure 1 End Time').split()[0])
 
 			# Fill Preictal data into dictionary
-			preictal_start_time = start_time + seizures_start_time - dataset.preictal_period
+			preictal_start_time = start_time + seizures_start_time - Parameters.preictal_period
 			preictal_end_time = start_time + seizures_start_time
 
 			if preictal_start_time > start_time :
 				
+				file_summary['f_name'].append(edf_file_name)
+				file_summary['class'].append('Interictal')
+				file_summary['t_start'].append(start_time)
+				file_summary['t_end'].append(preictal_start_time)
+
+				appendChannels(file_summary, reqd_channels_indices)
+
 				file_summary['f_name'].append(edf_file_name)
 				file_summary['class'].append('Preictal')
 				file_summary['t_start'].append(preictal_start_time)
@@ -185,7 +198,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 						file_summary['t_start'].append(preictal_start_time)
 						file_summary['t_end'].append(prev_file_end_time)
 
-						for field in range(len(dataset.EEG_Channels)) : file_summary[field].append(file_summary[field][-1])
+						for field in range(len(Parameters.EEG_Channels)) : file_summary[field].append(file_summary[field][-1])
 
 				except IndexError : pass
 
@@ -210,11 +223,3 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 	file.close()
 	
 	return file_summary
-
-if __name__ == '__main__' :
-
-	import os, pandas
-
-	my_dict = readCaseSummaryTxt(os.path.join(dataset.path, dataset.cases[0], dataset.cases[0] + '-summary.txt'))
-
-	print(pandas.DataFrame(my_dict))
