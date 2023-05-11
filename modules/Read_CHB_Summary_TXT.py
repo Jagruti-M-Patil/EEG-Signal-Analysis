@@ -45,7 +45,7 @@ def readField(line:str, field_name:str) -> str :
 def addToFileDictionary(dictionary:dict, f_name:str, p_start:float, p_end:float, p_label:Seizure_Period.label, f_start:float) :
 
 	dictionary['File Name'].append(f_name)
-	dictionary['Period Label'].append(p_label)
+	dictionary['Period Label'].append(p_label.value)
 	dictionary['Period Start Time'].append(p_start)
 	dictionary['Period End Time'].append(p_end)
 	dictionary['File Start Time'].append(f_start)

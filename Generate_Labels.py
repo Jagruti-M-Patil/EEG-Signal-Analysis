@@ -16,8 +16,6 @@ for case_id in Parameters.cases :
 
 		summary_dict['Case'] = [case_id] * len(summary_dict['File Name'])
 
-		summary_dict['Period Label'] = list(map(lambda x : x.name, summary_dict['Period Label']))
-
 		temp_df = pd.DataFrame(summary_dict)
 		df = pd.concat([df, temp_df])
 
