@@ -72,14 +72,3 @@ def getInputSignal(signal_data:np.ndarray, index:int) -> np.ndarray :
 	else :
 
 		return signal_data[:, index - Parameters.window_len: index]
-
-def generateInputSignalBatch(signal_data:np.ndarray, indices:list) -> np.ndarray :
-
-	ret_val = np.zeros((len(indices), signal_data.shape[0], Parameters.window_len))
-
-	for i, signal_index in enumerate(indices) :
-
-		ret_val[i] = getInputSignal(signal_data, signal_index)
-
-	return ret_val
-
