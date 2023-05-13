@@ -18,7 +18,7 @@ class ChannelsNotFoundError(Exception) :
 		channels_not_found = set(Parameters.EEG_Channels).difference(channels)
 		super().__init__('Channels not found - ' + str(channels_not_found))
 
-def getEdfDataAndLabels(edf_file_name:str) -> tuple[mne.io.BaseRaw, np.ndarray] :
+def getEdfData(edf_file_name:str) -> mne.io.BaseRaw :
 
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
 	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
@@ -31,6 +31,15 @@ def getEdfDataAndLabels(edf_file_name:str) -> tuple[mne.io.BaseRaw, np.ndarray] 
 
 	if set(edf_data.ch_names) != set(Parameters.EEG_Channels) : raise ChannelsNotFoundError(edf_data.ch_names)
 
+	return edf_data
+
+def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
+	'''	Returns an array of length = no. of samples.
+		Each element tells whether the sample was taken during a
+		Preictal, Ictal or Interictal period '''
+	
+	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+
 	labels = np.zeros(edf_data.n_times, dtype=Seizure_Period.label)
 
 	for row_no, row in rows.iterrows() :
@@ -42,8 +51,35 @@ def getEdfDataAndLabels(edf_file_name:str) -> tuple[mne.io.BaseRaw, np.ndarray] 
 
 		labels[indices] = Seizure_Period.label(row['Period Label'])
 
-	return edf_data, labels
+	return labels
 
 def getSignalData(edf_raw_data:mne.io.BaseRaw) -> np.ndarray :
 
-	return edf_raw_data.get_data(picks=Parameters.EEG_Channels).T.copy()
+	return edf_raw_data.get_data(picks=Parameters.EEG_Channels)
+
+def getInputSignal(signal_data:np.ndarray, index:int) -> np.ndarray :
+
+	index += 1
+
+	if index < Parameters.window_len :
+
+		ret_val = np.zeros((signal_data.shape[0], Parameters.window_len))
+
+		ret_val[:, Parameters.window_len - index:] = signal_data[:, :index]
+
+		return ret_val
+
+	else :
+
+		return signal_data[:, index - Parameters.window_len: index]
+
+def generateInputSignalBatch(signal_data:np.ndarray, indices:list) -> np.ndarray :
+
+	ret_val = np.zeros((len(indices), signal_data.shape[0], Parameters.window_len))
+
+	for i, signal_index in enumerate(indices) :
+
+		ret_val[i] = getInputSignal(signal_data, signal_index)
+
+	return ret_val
+

@@ -4,6 +4,8 @@ save_path = "D:\\Jagruti's Docs\\IN719\\data"
 
 preictal_period = 15 * 60 # seconds
 
+window_len = 1000 # No of samples (time data points) input to ML model per channel
+
 cases = [
     "chb01",
 	"chb02",

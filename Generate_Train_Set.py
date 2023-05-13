@@ -4,7 +4,7 @@ import random
 import pandas as pd
 
 import Parameters
-from modules.Load_EEG_Data import getEdfDataAndLabels, ChannelsNotFoundError
+from modules.Load_EEG_Data import getEdfData, ChannelsNotFoundError
 
 edf_period_labels_file_path = os.path.join(Parameters.save_path, 'edf-file-period-labels.csv')
 edf_period_labels_df = pd.read_csv(edf_period_labels_file_path)
@@ -19,7 +19,7 @@ for file_name, count in files.items() :
 
 	try :
 
-		getEdfDataAndLabels(file_name)
+		getEdfData(file_name)
 
 		# If count greater than 1, means it has a preictal period
 		if count > 1 :
