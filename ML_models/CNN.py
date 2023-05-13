@@ -40,7 +40,7 @@ def getInput(signal_data:np.ndarray, index:int) -> np.ndarray :
 
 	return input_signal
 
-def trainEdf(edf_data:mne.io.base, output_data:np.ndarray, train_indices:list) -> float :
+def trainEdf(edf_data:mne.io.base, output_data:np.ndarray, train_indices:list) -> tuple[float, float] :
 
 	edf_data.load_data(verbose=False)
 
@@ -50,6 +50,16 @@ def trainEdf(edf_data:mne.io.base, output_data:np.ndarray, train_indices:list) -
 
 	return trainByBatch(signal_data, output_data, train_indices)
 
+def testEdf(edf_data:mne.io.base, output_data:np.ndarray, test_indices:list) -> tuple[float, float] :
+
+	edf_data.load_data(verbose=False)
+
+	filtered_edf_data = edf_data.notch_filter(50, verbose=False)
+
+	signal_data = Load_EEG_Data.getSignalData(filtered_edf_data)
+
+	return testByBatch(signal_data, output_data, test_indices)
+
 def saveCheckpoint(file_name:str='checkpoint.ckpt') :
 
 	path = os.path.join(Parameters.save_path, 'ML models', model_name, 'Train', file_name)
@@ -58,7 +68,7 @@ def saveCheckpoint(file_name:str='checkpoint.ckpt') :
 
 	pass
 
-def saveModel(file_name:str) -> None :
+def saveModel(file_name:str='Model') -> None :
 
 	path = os.path.join(Parameters.save_path, 'ML models', model_name, file_name)
 
@@ -66,7 +76,7 @@ def saveModel(file_name:str) -> None :
 
 	pass
 
-def loadModel(file_name:str) :
+def loadModel(file_name:str='Model') :
 
 	global model
 
@@ -80,7 +90,7 @@ def predict(signal_input:np.ndarray) :
 
 	return model.predict(signal_input)
 
-def trainByBatch(signal_data, output_data, train_indices:np.ndarray) -> float :
+def trainByBatch(signal_data, output_data, train_indices:np.ndarray) -> tuple[float, float] :
     
 	for step in range(train_indices.shape[0] // batch_size):
 
@@ -89,13 +99,28 @@ def trainByBatch(signal_data, output_data, train_indices:np.ndarray) -> float :
 		batch_x = generateInputBatch(signal_data, batch_indices)
 		batch_y = output_data[batch_indices]
 
-		loss, acc = model.train_on_batch(batch_x, batch_y)
+		loss, acc = model.train_on_batch(batch_x, batch_y, reset_metrics=False)
 
-	return acc
+	return loss, acc
+
+def testByBatch(signal_data, output_data, test_indices:np.ndarray) -> tuple[float, float] :
+    
+	for step in range(test_indices.shape[0] // batch_size):
+
+		batch_indices = test_indices[step * batch_size : (step + 1) * batch_size]
+
+		batch_x = generateInputBatch(signal_data, batch_indices)
+		batch_y = output_data[batch_indices]
+
+		loss, acc = model.test_on_batch(batch_x, batch_y, reset_metrics=False)
+
+		if (batch_y == 1).any() : print('Accuracy : ' + str(acc))
+	
+	return loss, acc
 
 def generateInputBatch(signal_data:np.ndarray, indices:list) -> np.ndarray :
 
-	ret_val = np.zeros((batch_size, input_shape[0], input_shape[1]))
+	ret_val = np.zeros((batch_size,) + input_shape)
 
 	for i, signal_index in enumerate(indices) :
 

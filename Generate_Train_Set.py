@@ -43,6 +43,7 @@ for file_name, count in files.items() :
 
 files_df = pd.DataFrame(files)
 files_df['Train'] = train_data_column
+files_df['Case'] = edf_period_labels_df['Case']
 
 files_df.dropna(inplace=True)
 

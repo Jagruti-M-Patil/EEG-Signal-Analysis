@@ -11,34 +11,47 @@ import ML_models.CNN as ML_Model
 train_files_db_path = os.path.join(Parameters.save_path, 'edf-file-train.csv')
 train_files_df = pd.read_csv(train_files_db_path)
 
+train_files_df = train_files_df.loc[train_files_df['Train']]
+train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
+
 ML_Model.generateModel()
 
-batch_size = 32
 epochs = 1
 
-for epoch in range(epochs):
+for epoch in range(epochs) :
 
 	print("Epochs completed {}/{}".format(epoch, epochs))
 
 	try :
 
-		for file_no, row in train_files_df.loc[train_files_df['Train']].iterrows() :
+		num_files_to_train = 1
 
-			edf_data = Load_EEG_Data.getEdfData(row['File Name'])
+		for file_no, row in train_files_df.iterrows() :
 
-			labels = Load_EEG_Data.getSignalLabels(edf_data, row['File Name'])
+			# edf_data = Load_EEG_Data.getEdfData(row['File Name'])
+
+			# labels = Load_EEG_Data.getSignalLabels(edf_data, row['File Name'])
+
+			edf_data = Load_EEG_Data.getEdfData('chb01_03.edf')
+
+			labels = Load_EEG_Data.getSignalLabels(edf_data, 'chb01_03.edf')
 
 			scalar_output = np.zeros_like(labels, dtype=float)
 			scalar_output[labels == Seizure_Period.label.Preictal] = 1.
 
 			train_indices, = np.nonzero(labels != Seizure_Period.label.Ictal)
 
-			ML_Model.trainEdf(edf_data, scalar_output, train_indices)
+			loss, acc = ML_Model.trainEdf(edf_data, scalar_output, train_indices)
 
-		ML_Model.saveCheckpoint()
+			ML_Model.saveCheckpoint()
+
+			num_files_to_train -= 1
+			if not num_files_to_train : break
+
+		print('Accuracy : ' + str(acc))
 
 	except KeyboardInterrupt :
 
-		pass
+		break
 
-ML_Model.saveModel('Model')
+ML_Model.saveModel()
