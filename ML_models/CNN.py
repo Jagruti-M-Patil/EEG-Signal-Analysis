@@ -42,6 +42,8 @@ def getInput(signal_data:np.ndarray, index:int) -> np.ndarray :
 
 def trainEdf(edf_data:mne.io.base, output_data:np.ndarray, train_indices:list) -> float :
 
+	edf_data.load_data(verbose=False)
+
 	filtered_edf_data = edf_data.notch_filter(50, verbose=False)
 
 	signal_data = Load_EEG_Data.getSignalData(filtered_edf_data)
