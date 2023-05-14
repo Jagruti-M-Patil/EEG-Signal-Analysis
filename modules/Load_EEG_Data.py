@@ -45,8 +45,8 @@ def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
 	for row_no, row in rows.iterrows() :
 
 		indices = np.logical_and(
-			edf_data.times >= row['Period Start Time'] - row['File Start Time'],
-			edf_data.times <= row['Period End Time'] - row['File Start Time']
+			edf_data.times >= row['Period Start Time'],
+			edf_data.times <= row['Period End Time']
 		)
 
 		labels[indices] = Seizure_Period.label(row['Period Label'])

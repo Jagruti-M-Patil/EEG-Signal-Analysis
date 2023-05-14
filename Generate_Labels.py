@@ -10,6 +10,8 @@ for case_id in Parameters.cases :
 
 	summary_file_path = os.path.join(Parameters.EEG_dataset_path, case_id, case_id + '-summary.txt')
 
+	print('Reading : ' + summary_file_path)
+
 	try :
 
 		summary_dict = readCaseSummaryTxt(summary_file_path)
@@ -26,5 +28,5 @@ for case_id in Parameters.cases :
 		
 # print(df)
 
-save_file_path = os.path.join(Parameters.save_path, 'edf-file-period-labels.csv')
-df.to_csv(save_file_path, ',', index=False)
+# save_file_path = os.path.join(Parameters.save_path, 'edf-file-period-labels.csv')
+# df.to_csv(save_file_path, ',', index=False)
