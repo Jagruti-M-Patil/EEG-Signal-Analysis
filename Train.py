@@ -6,13 +6,13 @@ import Parameters
 import modules.Load_EEG_Data as Load_EEG_Data
 import modules.Seizure_Period as Seizure_Period
 
-import ML_models.CNN as ML_Model
+import ML_models.AR_Dense as ML_Model
 
 train_files_db_path = os.path.join(Parameters.save_path, 'edf-file-train.csv')
 train_files_df = pd.read_csv(train_files_db_path)
 
 train_files_df = train_files_df.loc[train_files_df['Train']]
-train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
+# train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
 
 ML_Model.generateModel()
 
@@ -28,13 +28,9 @@ for epoch in range(epochs) :
 
 		for file_no, row in train_files_df.iterrows() :
 
-			# edf_data = Load_EEG_Data.getEdfData(row['File Name'])
+			edf_data = Load_EEG_Data.getEdfData(row['File Name'])
 
-			# labels = Load_EEG_Data.getSignalLabels(edf_data, row['File Name'])
-
-			edf_data = Load_EEG_Data.getEdfData('chb01_03.edf')
-
-			labels = Load_EEG_Data.getSignalLabels(edf_data, 'chb01_03.edf')
+			labels = Load_EEG_Data.getSignalLabels(edf_data, row['File Name'])
 
 			scalar_output = np.zeros_like(labels, dtype=float)
 			scalar_output[labels == Seizure_Period.label.Preictal] = 1.
