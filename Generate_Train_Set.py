@@ -9,13 +9,16 @@ from modules.Load_EEG_Data import getEdfData, ChannelsNotFoundError
 edf_period_labels_file_path = os.path.join(Parameters.save_path, 'edf-file-period-labels.csv')
 edf_period_labels_df = pd.read_csv(edf_period_labels_file_path)
 
-train_preictal_data_fraction = 0.1
+train_preictal_data_fraction = 0.5
 train_interictal_data_fraction = 0.1
 train_data_column = []
+case_id = []
 
 files = edf_period_labels_df['File Name'].value_counts()
 
 for file_name, count in files.items() :
+
+	case_id.append(file_name.split('_')[0])
 
 	try :
 
@@ -40,10 +43,9 @@ for file_name, count in files.items() :
 		print('Cannot find file ' + file_name)
 		train_data_column.append(nan)
 
-
 files_df = pd.DataFrame(files)
 files_df['Train'] = train_data_column
-files_df['Case'] = edf_period_labels_df['Case']
+files_df['Case'] = case_id
 
 files_df.dropna(inplace=True)
 
