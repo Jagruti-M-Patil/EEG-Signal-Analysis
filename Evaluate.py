@@ -11,18 +11,18 @@ import ML_models.CNN as ML_Model
 train_files_db_path = os.path.join(Parameters.save_path, 'edf-file-train.csv')
 train_files_df = pd.read_csv(train_files_db_path)
 
-train_files_df = train_files_df.loc[train_files_df['Train'] == False]
-train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
+# train_files = train_files_df.loc[train_files_df['Train'] == False]['File Name'].tolist()
+train_files = ['chb01_03.edf']
 
 ML_Model.loadModel()
 
 try :
 
-	for file_no, row in train_files_df.iterrows() :
+	for file_name in train_files :
 
-		edf_data = Load_EEG_Data.getEdfData(row['File Name'])
+		edf_data = Load_EEG_Data.getEdfData(file_name)
 
-		labels = Load_EEG_Data.getSignalLabels(edf_data, row['File Name'])
+		labels = Load_EEG_Data.getSignalLabels(edf_data, file_name)
 
 		scalar_output = np.zeros_like(labels, dtype=float)
 		scalar_output[labels == Seizure_Period.label.Preictal] = 1.

@@ -72,3 +72,34 @@ def getInputSignal(signal_data:np.ndarray, index:int) -> np.ndarray :
 	else :
 
 		return signal_data[:, index - Parameters.window_len: index]
+
+def getTrainMask(edf_data:mne.io.BaseRaw, edf_file_name:str) :
+
+	mask = np.zeros(edf_data.n_times, dtype=float)
+
+	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+
+	for row_no, row in rows.iterrows() :
+
+		indices = []
+
+		if Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Interictal :
+
+			indices = np.logical_and(
+				edf_data.times >= max(row['Period Start Time'], row['Period End Time'] - 15 * 60),
+				edf_data.times <= row['Period End Time']
+			)
+
+		elif Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Preictal :
+
+			indices = np.logical_and(
+				edf_data.times >= row['Period Start Time'],
+				edf_data.times <= row['Period End Time']
+			)
+
+		mask[indices] = 1
+
+	return mask
+
+
+

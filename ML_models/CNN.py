@@ -106,7 +106,7 @@ def trainByBatch(signal_data, output_data, train_indices:np.ndarray) -> tuple[fl
 
 def testByBatch(signal_data, output_data, test_indices:np.ndarray) -> tuple[float, float] :
     
-	for step in range(test_indices.shape[0] // batch_size):
+	for step in tqdm(range(test_indices.shape[0] // batch_size)) :
 
 		batch_indices = test_indices[step * batch_size : (step + 1) * batch_size]
 
@@ -115,7 +115,7 @@ def testByBatch(signal_data, output_data, test_indices:np.ndarray) -> tuple[floa
 
 		loss, acc = model.test_on_batch(batch_x, batch_y, reset_metrics=False)
 
-		if (batch_y == 1).any() : print('Accuracy : ' + str(acc))
+		# if (batch_y == 1).any() : print('Accuracy : ' + str(acc))
 	
 	return loss, acc
 

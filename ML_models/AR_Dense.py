@@ -42,15 +42,24 @@ def generateModel() :
 
 def estimate_ar_coefficients(input_signal):
     
-	autocorr = np.correlate(input_signal, input_signal, mode='full') # 2 * window_len - 1
+	# autocorr = np.correlate(input_signal, input_signal, mode='full') # 2 * window_len - 1
 
-	r = autocorr[(Parameters.window_len-1) : (Parameters.window_len-1) + (ar_order+1)] # ar_order + 1
+	# r = autocorr[(Parameters.window_len-1) : (Parameters.window_len-1) + (ar_order+1)] # ar_order + 1
 
-	r_matrix = toeplitz(r[:-1]) # ar_order x ar_order
+	# r_matrix = toeplitz(r[:-1]) # ar_order x ar_order
 
-	ar_coeffs = lstsq(r_matrix, r[1:])[0]
+	# ar_coeffs = lstsq(r_matrix, r[1:])[0]
+	 
+	ymat	= np.zeros((Parameters.window_len - ar_order, ar_order))
+	yb		= np.zeros_like(ymat)
 
-	return ar_coeffs
+	for _c in range(ar_order, 0, -1) :
+
+		ymat[ : , ar_order - _c] = input_signal[ar_order - _c : -_c]
+	
+	yb = input_signal[ar_order:]
+
+	return np.linalg.pinv(ymat) @ yb
 
 def getInput(signal_data:np.ndarray, index:int) -> np.ndarray :
 
