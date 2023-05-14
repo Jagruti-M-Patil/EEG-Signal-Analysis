@@ -5,8 +5,8 @@ from Parameters import preictal_period
 columns = set([
 	'File Name',
 	'Period Label',
-	'Period Start Time',	# Global time in seconds
-	'Period End Time',		# Global time in seconds
+	'Period Start Time',	# Local time in seconds
+	'Period End Time',		# Local time in seconds
 	'File Start Time'		# Global time in seconds
 ])
 
@@ -60,6 +60,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 	for field in columns : periods[field] = []
 
 	days = 0
+	last_read_time = -1
 
 	# Read first line
 	line = file.readline()
@@ -78,10 +79,18 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 		# read next line
 		line = file.readline() 
 		start_time, days = getSeconds(readField(line, 'File Start Time'), days)
+		if last_read_time > start_time :
+			days += 1
+			start_time += 3600 * 24
+		last_read_time = start_time
 
 		# read next line
 		line = file.readline()
 		end_time, days = getSeconds(readField(line, 'File End Time'), days)
+		if last_read_time > end_time :
+			days += 1
+			end_time += 3600 * 24
+		last_read_time = end_time
 
 		# read next line
 		line = file.readline()
@@ -90,7 +99,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 		if num_seizures == 0 :
 
 			# Fill data into dictionary
-			addToFileDictionary(periods, edf_file_name, start_time, end_time, Seizure_Period.label.Interictal, start_time)
+			addToFileDictionary(periods, edf_file_name, 0, end_time - start_time, Seizure_Period.label.Interictal, start_time)
 			
 		else :
 
@@ -108,62 +117,54 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 				try :						seizures_end_time = int(readField(line, 'Seizure End Time').split()[0])
 				except FieldNotFoundError :	seizures_end_time = int(readField(line, 'Seizure ' + str(seizure_no) + ' End Time').split()[0])
 
-				# Seizure start and end times are in local file clock
-				# convert to global clock
-				seizures_start_time += start_time
-				seizures_end_time += start_time
-
 				# Find preictal start and end times
 				preictal_start_time = seizures_start_time - preictal_period
 				preictal_end_time = seizures_start_time
 
-				# If the preictal period starts before the previous period ends
-				if len(periods['File Name']) and preictal_start_time < periods['Period End Time'][-1] :
+				if seizure_no == 1 :
+						
+					if preictal_start_time > 0 :
 
-					# Amend the previous period end time
-					prev_period_end_time = periods['Period End Time'][-1]
-					periods['Period End Time'][-1] = preictal_start_time
+						addToFileDictionary(periods, edf_file_name, 0, preictal_start_time, Seizure_Period.label.Interictal, start_time)
 
-					# If the previous period belongs to a separate file
-					# Generate a new preictal period for that file
-					if periods['File Name'][-1] != edf_file_name :
+					elif preictal_start_time < 0 :
 
-						addToFileDictionary(
-							periods, periods['File Name'][-1],
-							preictal_start_time,
-							prev_period_end_time,
-							Seizure_Period.label.Preictal,
-							periods['File Start Time'][-1]
-						)
+						last_period_global_stop_time = periods['Period End Time'][-1] + periods['File Start Time'][-1]
+						preictal_global_start_time = preictal_start_time + start_time
 
-					# Add the preictal period
-					addToFileDictionary(periods, edf_file_name, max(start_time, preictal_start_time), preictal_end_time, Seizure_Period.label.Preictal, start_time)
-					
-				# Preictal period starts before the previous period ends
-				else :
+						if preictal_global_start_time < last_period_global_stop_time :
 
-					# Add the interictal period after the previous period ends
-					# and before the preictal period starts
-					interictal_start_time = start_time
-					if len(periods['File Name']) : interictal_start_time = max(start_time, periods['Period End Time'][-1])
+							last_period_local_stop_time = preictal_global_start_time - periods['File Start Time'][-1]
 
-					addToFileDictionary(
-						periods,
-						edf_file_name,
-						interictal_start_time,
-						preictal_start_time,
-						Seizure_Period.label.Interictal,
-						start_time
-					)
+							periods['Period End Time'][-1] = last_period_local_stop_time
+							
+							addToFileDictionary(
+								periods,
+								periods['File Name'][-1],
+								last_period_local_stop_time,
+								last_period_global_stop_time - periods['File Start Time'][-1],
+								Seizure_Period.label.Preictal,
+								periods['File Start Time'][-1]
+							)
 
-					# Add the preictal period
+						preictal_start_time = 0
+
 					addToFileDictionary(periods, edf_file_name, preictal_start_time, preictal_end_time, Seizure_Period.label.Preictal, start_time)
 
-				# Add the ictal period
-				addToFileDictionary(periods, edf_file_name, seizures_start_time, seizures_end_time, Seizure_Period.label.Ictal, start_time)
+				else :
 
-				# Add the interictal period after the seizure
-				addToFileDictionary(periods, edf_file_name, seizures_end_time, end_time, Seizure_Period.label.Interictal, start_time)
+						if seizures_start_time < periods['Period Start Time'][-1] > preictal_period :
+						
+							periods['Period End Time'][-1] = preictal_start_time
+							addToFileDictionary(periods, edf_file_name, preictal_start_time, preictal_end_time, Seizure_Period.label.Preictal, start_time)
+
+						else :
+
+							periods['Period Label'][-1] = Seizure_Period.label.Preictal.value
+							periods['Period End Time'][-1] = preictal_end_time
+
+				addToFileDictionary(periods, edf_file_name, seizures_start_time, seizures_end_time, Seizure_Period.label.Ictal, start_time)
+				addToFileDictionary(periods, edf_file_name, seizures_end_time, end_time - start_time, Seizure_Period.label.Interictal, start_time)
 
 		# read next line
 		line = file.readline() 
