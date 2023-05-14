@@ -164,7 +164,7 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 							periods['Period End Time'][-1] = preictal_end_time
 
 				addToFileDictionary(periods, edf_file_name, seizures_start_time, seizures_end_time, Seizure_Period.label.Ictal, start_time)
-				addToFileDictionary(periods, edf_file_name, seizures_end_time, end_time, Seizure_Period.label.Interictal, start_time)
+				addToFileDictionary(periods, edf_file_name, seizures_end_time, end_time - start_time, Seizure_Period.label.Interictal, start_time)
 
 		# read next line
 		line = file.readline() 

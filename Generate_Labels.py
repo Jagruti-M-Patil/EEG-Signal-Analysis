@@ -28,5 +28,5 @@ for case_id in Parameters.cases :
 		
 # print(df)
 
-# save_file_path = os.path.join(Parameters.save_path, 'edf-file-period-labels.csv')
-# df.to_csv(save_file_path, ',', index=False)
+save_file_path = os.path.join(Parameters.save_path, 'edf-file-period-labels.csv')
+df.to_csv(save_file_path, ',', index=False)
