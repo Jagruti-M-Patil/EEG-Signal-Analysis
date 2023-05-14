@@ -24,10 +24,21 @@ def generateModel() :
 
 	# Define the model architecture
 	model = tf.keras.models.Sequential([
+		# tf.keras.layers.Input(shape=input_shape),
+		# tf.keras.layers.Dense(units=128, activation='relu'),
+		# tf.keras.layers.Dense(units=64, activation='relu'),
+		# tf.keras.layers.Dense(units=32, activation='relu'),
+		# tf.keras.layers.Dense(units=1, activation='sigmoid')
 		tf.keras.layers.Input(shape=input_shape),
 		tf.keras.layers.Dense(units=128, activation='relu'),
+		tf.keras.layers.BatchNormalization(),
+		tf.keras.layers.Dropout(0.2),
 		tf.keras.layers.Dense(units=64, activation='relu'),
+		tf.keras.layers.BatchNormalization(),
+		tf.keras.layers.Dropout(0.2),
 		tf.keras.layers.Dense(units=32, activation='relu'),
+		tf.keras.layers.BatchNormalization(),
+		tf.keras.layers.Dropout(0.2),
 		tf.keras.layers.Dense(units=1, activation='sigmoid')
 	])
 
@@ -42,7 +53,7 @@ def generateModel() :
 
 def compute_psd(input_signal) :
     
-	psd_df = bandpower(input_signal, sf=256, win_sec=2, bands=bands, bandpass=True, relative=True, kwargs_welch={'window': 'Hann'})
+	psd_df = bandpower(input_signal, sf=256, win_sec=2, bands=bands, bandpass=False, relative=False, kwargs_welch={'window': 'hann'})
 	
 	return psd_df[band_names].to_numpy()
 

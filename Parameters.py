@@ -1,6 +1,6 @@
-EEG_dataset_path = "D:\\Jagruti's Docs\\IN719\\CHB-MIT-EEG-Data"
+EEG_dataset_path = "E:\\Semester 2\\IN 791\\physionet.org\\files\\chbmit\\1.0.0\\"
 
-save_path = "D:\\Jagruti's Docs\\IN719\\data"
+save_path = "E:\\Semester 2\\IN 791\\data\\"
 
 preictal_period = 15 * 60 # seconds
 

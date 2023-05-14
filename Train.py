@@ -6,13 +6,13 @@ import Parameters
 import modules.Load_EEG_Data as Load_EEG_Data
 import modules.Seizure_Period as Seizure_Period
 
-import ML_models.CNN as ML_Model
+import ML_models.Spectral_Dense as ML_Model
 
 train_files_db_path = os.path.join(Parameters.save_path, 'edf-file-train.csv')
 train_files_df = pd.read_csv(train_files_db_path)
 
 train_files_df = train_files_df.loc[train_files_df['Train']]
-train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
+# train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
 
 ML_Model.generateModel()
 
