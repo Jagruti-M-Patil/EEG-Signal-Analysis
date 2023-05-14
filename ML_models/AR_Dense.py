@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.linalg import toeplitz, lstsq
 from scipy.signal import correlate
+from tqdm import tqdm
 
 import Parameters
 import modules.Load_EEG_Data as Load_EEG_Data
@@ -111,7 +112,7 @@ def predict(signal_input:np.ndarray) :
 
 def trainByBatch(signal_data, output_data, train_indices:np.ndarray) -> tuple[float, float] :
     
-	for step in range(train_indices.shape[0] // batch_size):
+	for step in tqdm(range(train_indices.shape[0] // batch_size)):
 
 		batch_indices = train_indices[step * batch_size : (step + 1) * batch_size]
 

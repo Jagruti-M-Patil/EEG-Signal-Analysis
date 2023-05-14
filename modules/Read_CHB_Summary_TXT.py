@@ -129,23 +129,25 @@ def readCaseSummaryTxt(file_path:str) -> dict :
 
 					elif preictal_start_time < 0 :
 
-						last_period_global_stop_time = periods['Period End Time'][-1] + periods['File Start Time'][-1]
-						preictal_global_start_time = preictal_start_time + start_time
+						if len(periods['File Name']) != 0 :
 
-						if preictal_global_start_time < last_period_global_stop_time :
+							last_period_global_stop_time = periods['Period End Time'][-1] + periods['File Start Time'][-1]
+							preictal_global_start_time = preictal_start_time + start_time
 
-							last_period_local_stop_time = preictal_global_start_time - periods['File Start Time'][-1]
+							if preictal_global_start_time < last_period_global_stop_time :
 
-							periods['Period End Time'][-1] = last_period_local_stop_time
-							
-							addToFileDictionary(
-								periods,
-								periods['File Name'][-1],
-								last_period_local_stop_time,
-								last_period_global_stop_time - periods['File Start Time'][-1],
-								Seizure_Period.label.Preictal,
-								periods['File Start Time'][-1]
-							)
+								last_period_local_stop_time = preictal_global_start_time - periods['File Start Time'][-1]
+
+								periods['Period End Time'][-1] = last_period_local_stop_time
+								
+								addToFileDictionary(
+									periods,
+									periods['File Name'][-1],
+									last_period_local_stop_time,
+									last_period_global_stop_time - periods['File Start Time'][-1],
+									Seizure_Period.label.Preictal,
+									periods['File Start Time'][-1]
+								)
 
 						preictal_start_time = 0
 

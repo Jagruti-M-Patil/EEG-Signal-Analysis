@@ -42,7 +42,7 @@ def generateModel() :
 
 def compute_psd(input_signal) :
     
-	psd_df = bandpower(input_signal, sf=256, win_sec=2, bands=bands, bandpass=False, relative=False, kwargs_welch={'window': 'Hann'})
+	psd_df = bandpower(input_signal, sf=256, win_sec=2, bands=bands, bandpass=False, relative=False, kwargs_welch={'window': 'hann'})
 	
 	return psd_df[band_names].to_numpy()
 
