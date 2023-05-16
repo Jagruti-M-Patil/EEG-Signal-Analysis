@@ -21,10 +21,10 @@ epochs = 1
 for epoch in range(epochs) :
 
 	print("Epochs completed {}/{}".format(epoch, epochs))
+	
+	num_files_to_train = 1
 
 	try :
-
-		num_files_to_train = 1
 
 		for file_no, row in train_files_df.iterrows() :
 

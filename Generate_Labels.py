@@ -29,4 +29,7 @@ for case_id in Parameters.cases :
 # print(df)
 
 save_file_path = os.path.join(Parameters.save_path, 'edf-file-period-labels.csv')
-df.to_csv(save_file_path, ',', index=False)
+df.to_csv(
+	save_file_path, ',', index=False,
+	columns=['Case', 'File Name', 'Period Label', 'Period Start Time', 'Period End Time', 'File Start Time']
+)
