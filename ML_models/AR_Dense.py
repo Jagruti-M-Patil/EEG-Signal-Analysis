@@ -2,92 +2,80 @@ import os
 import mne
 import numpy as np
 import tensorflow as tf
-from scipy.linalg import toeplitz, lstsq
-from scipy.signal import correlate
+from typing import Literal
 from tqdm import tqdm
 
 import Parameters
 import modules.Load_EEG_Data as Load_EEG_Data
-
-model_name = 'AR-Dense'
-
-# Define the input shape
-ar_order = 2
-input_shape = (len(Parameters.EEG_Channels), ar_order)
+import modules.Auto_Regression as AR
 
 model = None
 batch_size = 32
+
+PROCESS_TYPE = Literal['test', 'train']
+
+##############################################################################################################################
+
+model_name = 'AR_Dense'
+input_shape = (AR.order, AR.order, len(Parameters.EEG_Channels)) # Keep channels as the last dimension
 
 def generateModel() :
 
 	global model
 
 	# Define the model architecture
-	model = tf.keras.models.Sequential([
-		tf.keras.layers.Input(shape=input_shape),
-		tf.keras.layers.Dense(units=128, activation='relu'),
-		tf.keras.layers.Dense(units=64, activation='relu'),
-		tf.keras.layers.Dense(units=32, activation='relu'),
-		tf.keras.layers.Dense(units=1, activation='sigmoid')
-	])
+	model = tf.keras.Sequential(
+		[
+			tf.keras.layers.Input(shape=input_shape),
+			tf.keras.layers.Flatten(),
+			tf.keras.layers.Dense(units=64, activation='relu'),
+			tf.keras.layers.Dense(units=32, activation='relu'),
+			tf.keras.layers.Dense(units=1, activation='sigmoid')
+		]
+	)
 
 	# Compile the model
-	model.compile(
-		optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-		loss='mean_squared_error',
-		metrics=['mae']
-	)
-	
+	model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+
 	pass
 
-def estimate_ar_coefficients(input_signal):
-    
-	# autocorr = np.correlate(input_signal, input_signal, mode='full') # 2 * window_len - 1
+def generateModelInput(signal_data:np.ndarray) -> np.ndarray :
+	'''	Generates an ndarray of the shape \'input_shape\',
+		that is fed to the ML model. '''
 
-	# r = autocorr[(Parameters.window_len-1) : (Parameters.window_len-1) + (ar_order+1)] # ar_order + 1
+	model_input = np.zeros(input_shape)
 
-	# r_matrix = toeplitz(r[:-1]) # ar_order x ar_order
+	# Perform any transforms here
 
-	# ar_coeffs = lstsq(r_matrix, r[1:])[0]
-	 
-	ymat	= np.zeros((Parameters.window_len - ar_order, ar_order))
-	yb		= np.zeros_like(ymat)
+	model_input = np.apply_along_axis(AR.estimateARCoefficients, 1, signal_data)
 
-	for _c in range(ar_order, 0, -1) :
+	return model_input # Return array such that channel no is the last dimension
 
-		ymat[ : , ar_order - _c] = input_signal[ar_order - _c : -_c]
+def processEDF(edf_data:mne.io.base, output_data:np.ndarray, indices:list, process:PROCESS_TYPE) -> tuple[float, float] :
+
+	edf_data.load_data(verbose=False)
+
+	# Perform EDF data preprocessing here
+
+	filtered_edf_data = edf_data.notch_filter(50, verbose=False)
+
+	signal_data = Load_EEG_Data.getSignalData(filtered_edf_data)
+
+	if process == 'train' : func = model.train_on_batch
+	elif process == 'test' : func = model.test_on_batch
+
+	for step in tqdm(range(indices.shape[0] // batch_size)) :
+
+		batch_indices = indices[step * batch_size : (step + 1) * batch_size]
+
+		batch_x = generateInputBatch(signal_data, batch_indices)
+		batch_y = output_data[batch_indices]
+
+		loss, acc = func(batch_x, batch_y, reset_metrics=False)
 	
-	yb = input_signal[ar_order:]
+	return loss, acc
 
-	return np.linalg.pinv(ymat) @ yb
-
-def getInput(signal_data:np.ndarray, index:int) -> np.ndarray :
-
-	input_signal = Load_EEG_Data.getInputSignal(signal_data, index) # no_channels x no_samples
-
-	ar_input = np.apply_along_axis(estimate_ar_coefficients, 1, input_signal)
-
-	return ar_input
-
-def trainEdf(edf_data:mne.io.base, output_data:np.ndarray, train_indices:list) -> tuple[float, float] :
-
-	edf_data.load_data(verbose=False)
-
-	filtered_edf_data = edf_data.notch_filter(50, verbose=False)
-
-	signal_data = Load_EEG_Data.getSignalData(filtered_edf_data)
-
-	return trainByBatch(signal_data, output_data, train_indices)
-
-def testEdf(edf_data:mne.io.base, output_data:np.ndarray, test_indices:list) -> tuple[float, float] :
-
-	edf_data.load_data(verbose=False)
-
-	filtered_edf_data = edf_data.notch_filter(50, verbose=False)
-
-	signal_data = Load_EEG_Data.getSignalData(filtered_edf_data)
-
-	return testByBatch(signal_data, output_data, test_indices)
+##############################################################################################################################
 
 def saveCheckpoint(file_name:str='checkpoint.ckpt') :
 
@@ -115,37 +103,9 @@ def loadModel(file_name:str='Model') :
 
 	pass
 
-def predict(signal_input:np.ndarray) :
+def predict(model_input:np.ndarray) :
 
-	return model.predict(signal_input)
-
-def trainByBatch(signal_data, output_data, train_indices:np.ndarray) -> tuple[float, float] :
-    
-	for step in tqdm(range(train_indices.shape[0] // batch_size)):
-
-		batch_indices = train_indices[step * batch_size : (step + 1) * batch_size]
-
-		batch_x = generateInputBatch(signal_data, batch_indices)
-		batch_y = output_data[batch_indices]
-
-		loss, acc = model.train_on_batch(batch_x, batch_y, reset_metrics=False)
-
-	return loss, acc
-
-def testByBatch(signal_data, output_data, test_indices:np.ndarray) -> tuple[float, float] :
-    
-	for step in range(test_indices.shape[0] // batch_size):
-
-		batch_indices = test_indices[step * batch_size : (step + 1) * batch_size]
-
-		batch_x = generateInputBatch(signal_data, batch_indices)
-		batch_y = output_data[batch_indices]
-
-		loss, acc = model.test_on_batch(batch_x, batch_y, reset_metrics=False)
-
-		if (batch_y == 1).any() : print('Accuracy : ' + str(acc))
-	
-	return loss, acc
+	return model.predict(model_input)
 
 def generateInputBatch(signal_data:np.ndarray, indices:list) -> np.ndarray :
 
@@ -153,6 +113,6 @@ def generateInputBatch(signal_data:np.ndarray, indices:list) -> np.ndarray :
 
 	for i, signal_index in enumerate(indices) :
 
-		ret_val[i] = getInput(signal_data, signal_index)
+		ret_val[i] = generateModelInput(Load_EEG_Data.getInputSignal(signal_index, signal_data))
 
 	return ret_val
