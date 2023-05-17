@@ -71,7 +71,10 @@ def getInputSignal(index:int, signal_data:np.ndarray) -> np.ndarray :
 
 	index += 1
 
-	return signal_data[:, max(0, index - Parameters.window_len): index]
+	ret_mat = np.zeros((len(Parameters.EEG_Channels), Parameters.window_len))
+	ret_mat [:, max(0, Parameters.window_len - index):] = signal_data[:, max(0, index - Parameters.window_len): index]
+
+	return ret_mat
 
 def getTrainMask(edf_data:mne.io.BaseRaw, edf_file_name:str) :
 
