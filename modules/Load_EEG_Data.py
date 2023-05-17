@@ -19,6 +19,8 @@ class ChannelsNotFoundError(Exception) :
 		super().__init__('Channels not found - ' + str(channels_not_found))
 
 def getEdfData(edf_file_name:str) -> mne.io.BaseRaw :
+	'''	Loads data from edf file to a \'mne.io.RawEDF\' object.
+		Does not preload the signal data. '''
 
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
 	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
@@ -39,6 +41,7 @@ def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
 		Preictal, Ictal or Interictal period '''
 	
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
 
 	labels = np.zeros(edf_data.n_times, dtype=Seizure_Period.label)
 
@@ -54,30 +57,28 @@ def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
 	return labels
 
 def getSignalData(edf_raw_data:mne.io.BaseRaw) -> np.ndarray :
+	'''	Returns the signal data in a ndarray of the shape -
+		(no of channels) x (no of samples)	'''
 
 	return edf_raw_data.get_data(picks=Parameters.EEG_Channels)
 
-def getInputSignal(signal_data:np.ndarray, index:int) -> np.ndarray :
+def getInputSignal(index:int, signal_data:np.ndarray) -> np.ndarray :
+	'''	Returns a window of signal data as an ndarray of the shape -
+		(no of channels) x (no of samples in a window).
+		out_array[:,-1] corresponds to the signal at time t[index],
+		out_array[:, 0] corresponds to the signal at time t[index - window_len].
+	'''
 
 	index += 1
 
-	if index < Parameters.window_len :
-
-		ret_val = np.zeros((signal_data.shape[0], Parameters.window_len))
-
-		ret_val[:, Parameters.window_len - index:] = signal_data[:, :index]
-
-		return ret_val
-
-	else :
-
-		return signal_data[:, index - Parameters.window_len: index]
+	return signal_data[:, max(0, index - Parameters.window_len): index]
 
 def getTrainMask(edf_data:mne.io.BaseRaw, edf_file_name:str) :
 
-	mask = np.zeros(edf_data.n_times, dtype=float)
+	mask = np.zeros(edf_data.n_times, dtype=bool)
 
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
 
 	for row_no, row in rows.iterrows() :
 
@@ -97,7 +98,7 @@ def getTrainMask(edf_data:mne.io.BaseRaw, edf_file_name:str) :
 				edf_data.times <= row['Period End Time']
 			)
 
-		mask[indices] = 1
+		mask[indices] = True
 
 	return mask
 
