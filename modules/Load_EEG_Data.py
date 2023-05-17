@@ -102,5 +102,24 @@ def getTrainMask(edf_data:mne.io.BaseRaw, edf_file_name:str) :
 
 	return mask
 
+def getAnnotation(edf_file_name:str) :
 
+	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
+
+	onset		= []
+	duration	= []
+
+	labels	= []
+
+	for row_no, row in rows.iterrows() :
+
+		labels.append(Seizure_Period.label(row['Period Label']).name)
+		
+		onset.append(row['Period Start Time'])
+		duration.append(row['Period End Time'] - row['Period Start Time'])
+
+		pass
+
+	return mne.Annotations(onset, duration, labels)
 
