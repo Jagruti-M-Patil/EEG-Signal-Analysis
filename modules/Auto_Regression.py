@@ -10,15 +10,15 @@ order = 2
 def estimateARCoefficients(input_signal):
 
 	ymat	= np.zeros((Parameters.window_len - order, order))	# (window_len - order) x order
-	yb		= np.zeros_like(ymat)								# (window_len - order) x order
 
 	for _c in range(order, 0, -1) :
 
 		ymat[ : , order - _c] = input_signal[order - _c : -_c]
 
-	yb = input_signal[order:]
+	yb = input_signal[order:]	# (window_len - order) x 1
 
-	#   ((order x order) . (order x (window_len - order))) . ((window_len - order) x order)
-	# = (order x (window_len - order)) . ((window_len - order) x order)
-	# = (order x order)
+	#   ((order x order) . (order x (window_len - order))) . ((window_len - order) x 1)
+	# = (order x (window_len - order)) . ((window_len - order) x 1)
+	# = (order x 1)
+	
 	return np.linalg.pinv(ymat) @ yb

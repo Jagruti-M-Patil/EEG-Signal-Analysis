@@ -17,7 +17,7 @@ PROCESS_TYPE = Literal['test', 'train']
 ##############################################################################################################################
 
 model_name = 'AR_Dense'
-input_shape = (AR.order, AR.order, len(Parameters.EEG_Channels)) # Keep channels as the last dimension
+input_shape = (AR.order, len(Parameters.EEG_Channels)) # Keep channels as the last dimension
 
 def generateModel() :
 
@@ -47,7 +47,7 @@ def generateModelInput(signal_data:np.ndarray) -> np.ndarray :
 
 	# Perform any transforms here
 
-	model_input = np.apply_along_axis(AR.estimateARCoefficients, 1, signal_data)
+	model_input = np.apply_along_axis(AR.estimateARCoefficients, 1, signal_data).T
 
 	return model_input # Return array such that channel no is the last dimension
 
