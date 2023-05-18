@@ -49,7 +49,7 @@ def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
 
 		indices = np.logical_and(
 			edf_data.times >= row['Period Start Time'],
-			edf_data.times <= row['Period End Time']
+			edf_data.times < row['Period End Time']
 		)
 
 		labels[indices] = Seizure_Period.label(row['Period Label'])
@@ -83,25 +83,37 @@ def getTrainMask(edf_data:mne.io.BaseRaw, edf_file_name:str) :
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
 	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
 
+	last_interictal_row = pd.Series()
+
 	for row_no, row in rows.iterrows() :
 
 		indices = []
 
+		if Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Preictal :
+
+			if last_interictal_row.empty :
+
+				indices = np.logical_and(
+					edf_data.times >= row['Period Start Time'],
+					edf_data.times < row['Period End Time']
+				)
+
+			else :
+
+				indices = np.logical_and(
+					edf_data.times >= max(last_interictal_row['Period Start Time'], row['Period Start Time'] - 15 * 60),
+					edf_data.times < row['Period End Time']
+				)
+
+			mask[indices] = True
+
 		if Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Interictal :
 
-			indices = np.logical_and(
-				edf_data.times >= max(row['Period Start Time'], row['Period End Time'] - 15 * 60),
-				edf_data.times <= row['Period End Time']
-			)
+			last_interictal_row = row.copy()
 
-		elif Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Preictal :
+		else :
 
-			indices = np.logical_and(
-				edf_data.times >= row['Period Start Time'],
-				edf_data.times <= row['Period End Time']
-			)
-
-		mask[indices] = True
+			last_interictal_row = pd.Series()
 
 	return mask
 
