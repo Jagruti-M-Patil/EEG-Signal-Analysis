@@ -39,6 +39,7 @@ for epoch in range(epochs) :
 			scalar_output[labels == Seizure_Period.label.Preictal] = 1.
 
 			train_indices, = np.nonzero(Load_EEG_Data.getTrainMask(edf_data, file_name))
+			np.random.shuffle(train_indices)
 
 			loss, acc = ML_Model.processEDF(edf_data, scalar_output, train_indices, 'train')
 
