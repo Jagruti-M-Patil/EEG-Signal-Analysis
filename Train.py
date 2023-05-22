@@ -14,7 +14,7 @@ train_files_df = pd.read_csv(train_files_path)
 train_files_df = train_files_df.loc[train_files_df['Train']]
 # train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
 
-files_list = train_files_df.index.to_list()
+files_list = train_files_df['File Name'].to_list()
 # files_list = []
 
 ML_Model.generateModel()
