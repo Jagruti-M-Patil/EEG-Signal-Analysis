@@ -6,7 +6,7 @@ import Parameters
 import modules.Load_EEG_Data as Load_EEG_Data
 import modules.Seizure_Period as Seizure_Period
 
-import ML_models.CNN as ML_Model
+import ML_models.Spectral_SVM_Linear as ML_Model
 
 train_files_path = os.path.join(Parameters.save_path, 'edf-file-train.csv')
 train_files_df = pd.read_csv(train_files_path)
@@ -14,44 +14,63 @@ train_files_df = pd.read_csv(train_files_path)
 train_files_df = train_files_df.loc[train_files_df['Train']]
 # train_files_df = train_files_df.loc[train_files_df['Case'] == 'chb01']
 
-files_list = train_files_df.index.to_list()
-# files_list = []
+# files_list = train_files_df['File Name'].to_list()
+files_list = ['chb01_03.edf']
 
 ML_Model.generateModel()
 
-epochs = 1
+# Get Train Dataset Size
+num_train_data = 0
 
-for epoch in range(epochs) :
+for file_name in files_list :
 
-	print("Epochs completed {}/{}".format(epoch, epochs))
-	
-	num_files_to_train = 1
+	edf_data = Load_EEG_Data.getEdfData(file_name)
 
-	try :
+	num_train_data += np.count_nonzero(Load_EEG_Data.getTrainMask(edf_data, file_name))
 
-		for file_name in files_list :
+print('Train Set : ', num_train_data)
 
-			edf_data = Load_EEG_Data.getEdfData(file_name)
+try : 
 
-			labels = Load_EEG_Data.getSignalLabels(edf_data, file_name)
+	print('Creating Train Set...')
 
-			scalar_output = np.zeros_like(labels, dtype=float)
-			scalar_output[labels == Seizure_Period.label.Preictal] = 1.
+	x_batch = np.zeros((num_train_data,) + ML_Model.input_shape)
+	y_batch = np.zeros(num_train_data)
 
-			train_indices, = np.nonzero(Load_EEG_Data.getTrainMask(edf_data, file_name))
-			np.random.shuffle(train_indices)
+	k = 0
 
-			loss, acc = ML_Model.processEDF(edf_data, scalar_output, train_indices, 'train')
+	for file_name in files_list :
 
-			ML_Model.saveCheckpoint()
+		edf_data = Load_EEG_Data.getEdfData(file_name)
 
-			num_files_to_train -= 1
-			if not num_files_to_train : break
+		signal_data = Load_EEG_Data.getSignalData(edf_data)
+		labels = Load_EEG_Data.getSignalLabels(edf_data, file_name)
 
-		print('Accuracy : ' + str(acc))
+		scalar_output = np.zeros_like(labels, dtype=float)
+		scalar_output[labels == Seizure_Period.label.Preictal] = 1.
 
-	except KeyboardInterrupt :
+		train_indices, = np.nonzero(Load_EEG_Data.getTrainMask(edf_data, file_name))
+		np.random.shuffle(train_indices)
 
-		break
+		num = train_indices.shape[0]
+		x_batch[k:k+num, ...] = ML_Model.generateInputBatch(signal_data, train_indices)
+		y_batch[k:k+num] = scalar_output[train_indices]
 
-ML_Model.saveModel()
+		k += num
+
+	print('Training...')
+
+	ML_Model.model.fit(x_batch, y_batch)
+
+	print('Saving model params...')
+	ML_Model.saveModel()
+
+except KeyboardInterrupt :
+
+	print('Saving model params...')
+	ML_Model.saveModel()
+
+except np.core._exceptions._ArrayMemoryError :
+
+	raise ValueError('Too huge dataset!!')
+
