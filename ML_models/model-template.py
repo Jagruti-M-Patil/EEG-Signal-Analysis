@@ -15,7 +15,7 @@ PROCESS_TYPE = Literal['test', 'train']
 
 ##############################################################################################################################
 
-model_name = 'CNN'
+model_name = ''
 input_shape = (Parameters.window_len, len(Parameters.EEG_Channels)) # Keep channels as the last dimension
 
 def generateModel() :

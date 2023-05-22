@@ -19,6 +19,8 @@ class ChannelsNotFoundError(Exception) :
 		super().__init__('Channels not found - ' + str(channels_not_found))
 
 def getEdfData(edf_file_name:str) -> mne.io.BaseRaw :
+	'''	Loads data from edf file to a \'mne.io.RawEDF\' object.
+		Does not preload the signal data. '''
 
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
 	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
@@ -39,6 +41,7 @@ def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
 		Preictal, Ictal or Interictal period '''
 	
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
 
 	labels = np.zeros(edf_data.n_times, dtype=Seizure_Period.label)
 
@@ -46,7 +49,7 @@ def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
 
 		indices = np.logical_and(
 			edf_data.times >= row['Period Start Time'],
-			edf_data.times <= row['Period End Time']
+			edf_data.times < row['Period End Time']
 		)
 
 		labels[indices] = Seizure_Period.label(row['Period Label'])
@@ -54,52 +57,84 @@ def getSignalLabels(edf_data:mne.io.BaseRaw, edf_file_name:str) -> np.ndarray :
 	return labels
 
 def getSignalData(edf_raw_data:mne.io.BaseRaw) -> np.ndarray :
+	'''	Returns the signal data in a ndarray of the shape -
+		(no of channels) x (no of samples)	'''
 
 	return edf_raw_data.get_data(picks=Parameters.EEG_Channels)
 
-def getInputSignal(signal_data:np.ndarray, index:int) -> np.ndarray :
+def getInputSignal(index:int, signal_data:np.ndarray) -> np.ndarray :
+	'''	Returns a window of signal data as an ndarray of the shape -
+		(no of channels) x (no of samples in a window).
+		out_array[:,-1] corresponds to the signal at time t[index],
+		out_array[:, 0] corresponds to the signal at time t[index - window_len].
+	'''
 
 	index += 1
 
-	if index < Parameters.window_len :
+	ret_mat = np.zeros((len(Parameters.EEG_Channels), Parameters.window_len))
+	ret_mat [:, max(0, Parameters.window_len - index):] = signal_data[:, max(0, index - Parameters.window_len): index]
 
-		ret_val = np.zeros((signal_data.shape[0], Parameters.window_len))
-
-		ret_val[:, Parameters.window_len - index:] = signal_data[:, :index]
-
-		return ret_val
-
-	else :
-
-		return signal_data[:, index - Parameters.window_len: index]
+	return ret_mat
 
 def getTrainMask(edf_data:mne.io.BaseRaw, edf_file_name:str) :
 
-	mask = np.zeros(edf_data.n_times, dtype=float)
+	mask = np.zeros(edf_data.n_times, dtype=bool)
 
 	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
+
+	last_interictal_row = pd.Series()
 
 	for row_no, row in rows.iterrows() :
 
 		indices = []
 
+		if Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Preictal :
+
+			if last_interictal_row.empty :
+
+				indices = np.logical_and(
+					edf_data.times >= row['Period Start Time'],
+					edf_data.times < row['Period End Time']
+				)
+
+			else :
+
+				indices = np.logical_and(
+					edf_data.times >= max(last_interictal_row['Period Start Time'], row['Period Start Time'] - 15 * 60),
+					edf_data.times < row['Period End Time']
+				)
+
+			mask[indices] = True
+
 		if Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Interictal :
 
-			indices = np.logical_and(
-				edf_data.times >= max(row['Period Start Time'], row['Period End Time'] - 15 * 60),
-				edf_data.times <= row['Period End Time']
-			)
+			last_interictal_row = row.copy()
 
-		elif Seizure_Period.label(row['Period Label']) == Seizure_Period.label.Preictal :
+		else :
 
-			indices = np.logical_and(
-				edf_data.times >= row['Period Start Time'],
-				edf_data.times <= row['Period End Time']
-			)
-
-		mask[indices] = 1
+			last_interictal_row = pd.Series()
 
 	return mask
 
+def getAnnotation(edf_file_name:str) :
 
+	rows = edf_period_labels_df.loc[edf_period_labels_df['File Name'] == edf_file_name]
+	if rows.empty : raise FileNotFoundError('\"' + edf_file_name + '\" not in database.')
+
+	onset		= []
+	duration	= []
+
+	labels	= []
+
+	for row_no, row in rows.iterrows() :
+
+		labels.append(Seizure_Period.label(row['Period Label']).name)
+		
+		onset.append(row['Period Start Time'])
+		duration.append(row['Period End Time'] - row['Period Start Time'])
+
+		pass
+
+	return mne.Annotations(onset, duration, labels)
 
